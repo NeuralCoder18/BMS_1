@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 
 import mysql.connector
 class bank():
@@ -10,11 +11,37 @@ class bank():
         scrn_width=self.root.winfo_screenwidth()
         scrn_height=self.root.winfo_screenheight()
 
+        self.mainFrame = None         
+        self.openAcFrame = None       
+        self.submitFrame = None  
+
+        self.db = mysql.connector.connect(
+        host="localhost",
+        port=3306,     
+        user="root",          
+        password="iwtcam@dss",  
+        database="bank_db"     
+        )
+        self.cursor = self.db.cursor()
+
+
+
         self.root.geometry(f"{scrn_width}x{scrn_height}+0+0")
         #main label
         mainLabel=tk.Label(self.root,text="Bank Management System",font=("Times Roman",40,"bold"),bg="dark blue",bd=5,relief="raised")
         mainLabel.pack(side="top",fill="x")
-        #frame for operation
+
+        self.create_main_frame()
+        #================
+        #  MAIN FRAME    |||
+        #================
+
+    def create_main_frame(self):
+        
+        if self.openAcFrame:
+            self.openAcFrame.destroy()
+        
+
         mainFrame=tk.Frame(self.root,bg="light gray",bd=5,relief="ridge")
         mainFrame.place(x=500,y=90,width=450,height=550)
         opLabel=tk.Label(mainFrame,text="To Open Account Click Below",font=("Times Roman",20,"bold"))
@@ -57,6 +84,11 @@ class bank():
         wtBtn.place(x=80,y=300,width=280,height=60)
         #defining function of openAc button
     def openAc(self):
+        if self.mainFrame:
+            self.mainFrame.destroy()
+        #================================================
+        #OPENAC FRAME (FUNCTION OF OPEN ACCOUNT BUTTON) ||
+        #================================================
         self.openAcFrame=tk.Frame(self.root,bg="light gray",bd=5,relief="ridge")
         self.openAcFrame.place(x=240,y=90,width=1000,height=700)
 
@@ -110,6 +142,12 @@ class bank():
         self.emailIn=tk.Entry(self.openAcFrame,fg="white",width=15,font=("Times Roman",15))
         self.emailIn.grid(row=6,column=1,padx=20,pady=30)
 
+          #adding to show aadhar no input gui and taking entry
+        aadharLabel=tk.Label(self.openAcFrame,text="Aadhar no. :",bg="light gray",fg="black",font=("Times Roman",15,"bold"))
+        aadharLabel.grid(row=7,column=0,padx=20,pady=30)
+        self.aadharIn=tk.Entry(self.openAcFrame,fg="white",width=15,font=("Times Roman",15))
+        self.aadharIn.grid(row=7,column=1,padx=20,pady=30)
+
         #add label of address
         addLabel=tk.Label(self.openAcFrame,text="Fill Your Address Detail",font=("Times Roman",20,"bold"))
         addLabel.place(x=650,y=0)
@@ -162,43 +200,67 @@ class bank():
         self.relIn=tk.Entry(self.openAcFrame,fg="white",width=15,font=("Times Roman",15))
         self.relIn.grid(row=5,column=6,padx=20,pady=30)
 
-        submitBtn=ttk.Button(self.openAcFrame,text="Submit",command=self.submit,style="Blue.TButton")
+        submitBtn=ttk.Button(self.openAcFrame,text="Submit",command=self.final_submit,style="Blue.TButton")
         submitBtn.grid(row=7,column=6,padx=20,pady=10)
 
-    def submit(self):
-        self.submitFrame=tk.Frame(self.root,bg="light gray",bd=5,relief="ridge")
-        self.submitFrame.place(x=240,y=90,width=1000,height=700)
+        backBtn=ttk.Button(self.openAcFrame,text="Back",command=self.create_main_frame,style="Blue.TButton")
+        backBtn.grid(row=7,column=5,padx=20,pady=10)
+    def final_submit(self):
+        
+        self.save_database()
+        self.create_main_frame()
 
-        #add label of password
-        nomLabel=tk.Label(self.submitFrame,text="Password Section",font=("Times Roman",30,"bold"))
-        nomLabel.place(x=350,y=0)
-        #add space
-        self.submitFrame.grid_columnconfigure(1, minsize=100)
-        self.submitFrame.grid_columnconfigure(2, minsize=100)
-        self.submitFrame.grid_columnconfigure(3, minsize=80)
 
-        self.submitFrame.grid_rowconfigure(1, minsize=70)
+    def save_database(self):
+        name = self.usnameIn.get()
+        father = self.usfnameIn.get()
+        mother = self.usmnameIn.get()
+        gender = self.genIn.get()
+        nationality = self.natIn.get()
+        phone = self.conIn.get()
+        email = self.emailIn.get()
+        aadhar = self.aadharIn.get()
+        village = self.villIn.get()
+        district = self.distIn.get()
+        state = self.stateIn.get()
+        pincode = self.pincIn.get()
+        nominee = self.nomIn.get()
+        relation = self.relIn.get()
 
-        #adding to show password input gui and taking entry
-        passcLabel=tk.Label(self.submitFrame,text="Password :",bg="light gray",fg="black",font=("Times Roman",25,"bold"))
-        passcLabel.grid(row=2,column=4,padx=20,pady=30)
-        self.passIn=tk.Entry(self.submitFrame,fg="white",width=15,font=("Times Roman",25))
-        self.passIn.grid(row=2,column=5,padx=20,pady=30)
+        required_fields = [name, father, mother, gender, nationality, phone, email, aadhar, village, district, state, pincode, nominee, relation]
+    
+        if any(field == "" for field in required_fields):
+            messagebox.showerror("Error", "⚠️ Please fill all fields before submitting.")
+            return  
 
-         #adding to show confirm password input gui and taking entry
-        cnfpasscLabel=tk.Label(self.submitFrame,text="Confirm Password :",bg="light gray",fg="black",font=("Times Roman",25,"bold"))
-        cnfpasscLabel.grid(row=3,column=4,padx=20,pady=30)
-        self.cnfpassIn=tk.Entry(self.submitFrame,fg="white",width=15,font=("Times Roman",25))
-        self.cnfpassIn.grid(row=3,column=5,padx=20,pady=30)
 
-        self.submitFrame.grid_rowconfigure(1, minsize=50)
-        # self.submitFrame.grid_columnconfigure(4, minsize=10)
-        #add label of note
-        noteLabel=tk.Label(self.submitFrame,text="Note: Don't share your password",font=("Times Roman",15,"bold"))
-        noteLabel.place(x=300,y=230)
 
-        submitBtn=ttk.Button(self.submitFrame,text="Submit",style="Blue.TButton")
-        submitBtn.grid(row=5,column=4,padx=20,pady=10)
+        if not phone.isdigit() or len(phone) != 10:
+            messagebox.showerror("Error", "📱 Phone number must be 10 digits.")
+            return
+
+        if not aadhar.isdigit() or len(aadhar) != 12:
+            messagebox.showerror("Error", "🆔 Aadhar number must be 12 digits.")
+            return
+
+        if not pincode.isdigit() or len(pincode) != 6:
+            messagebox.showerror("Error", "📮 Pincode must be 6 digits.")
+            return
+
+    # Insert into MySQL table
+        self.cursor.execute("""INSERT INTO accounts (name, father_name, mother_name, gender, nationality, phone, email, aadhar, village, district, state, pincode, nominee_name, relationship) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """, (name, father, mother, gender, nationality, phone, email, aadhar, village, district, state, pincode, nominee, relation))
+    
+   
+        self.db.commit()
+
+        tk.messagebox.showinfo("Success", "Account successfully created!")
+
+    
+    
+
+
+
 
 
 root=tk.Tk()
