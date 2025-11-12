@@ -156,7 +156,7 @@ class bank():
         #add label of address
         addLabel=tk.Label(self.openAcFrame,text="Fill Your Address Detail",font=("Times Roman",20,"bold"))
         addLabel.place(x=650,y=0)
-
+        #
         #add empty space
 
         self.openAcFrame.grid_columnconfigure(2, minsize=100)
