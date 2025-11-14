@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+import datetime
 
 import os
 from dotenv import load_dotenv
@@ -77,7 +78,7 @@ class bank():
         dpLabel.place(x=160,y=130)
 
         #add deposit button
-        dpBtn=ttk.Button(mainFrame,text="Deposit",style="Blue.TButton")
+        dpBtn=ttk.Button(mainFrame,command=self.deposit,text="Deposit",style="Blue.TButton")
         dpBtn.place(x=80,y=170,width=280,height=60)
 
         #add withdraw label
@@ -263,11 +264,140 @@ class bank():
    
         self.db.commit()
 
-        tk.messagebox.showinfo("Success", "Account successfully created!")
+        account_id = self.cursor.lastrowid  
+        
+        bank_code = "BNK"
+        year = datetime.datetime.now().year
+        custom_number = f"{bank_code}{year}-{account_id:08d}"
+
+        
+        self.cursor.execute(
+            "UPDATE accounts SET account_number = %s WHERE id = %s",
+            (custom_number, account_id)
+        )
+
+        self.db.commit()
+
+        messagebox.showinfo("Success", f"Account Created!\nYour Account Number: {custom_number}")
+
+
 
         return True
     
+    #. Defining function of deposit button
+    def deposit(self):
+        if self.mainFrame:
+            self.mainFrame.destroy()
+        #================================================
+        #DEPOSIT FRAME (FUNCTION OF DEPOSIT BUTTON) ||
+        #================================================
+        self.depositFrame=tk.Frame(self.root,bg="light gray",bd=5,relief="ridge")
+        self.depositFrame.place(x=500,y=90,width=450,height=550)
+
+        #add label of money being deposited
+        depoLabel=tk.Label(self.depositFrame,text="Amount to be deposited",font=("Times Roman",20,"bold"))
+        depoLabel.place(x=90,y=10)
+
+        self.depositFrame.grid_columnconfigure(0, minsize=60)
+        self.depositFrame.grid_rowconfigure(0, minsize=60)
+
+        #adding to show money being deposited
+        usenameLabel=tk.Label(self.depositFrame,text="User Name :",bg="light gray",fg="black",font=("Times Roman",15,"bold"))
+        usenameLabel.grid(row=1,column=1,padx=20,pady=30)
+        self.usenameIn=tk.Entry(self.depositFrame,fg="white",width=15,font=("Times Roman",15))
+        self.usenameIn.grid(row=1,column=2,padx=20,pady=30)
+
+        #adding to show money being deposited
+        acLabel=tk.Label(self.depositFrame,text="Account Number :",bg="light gray",fg="black",font=("Times Roman",15,"bold"))
+        acLabel.grid(row=2,column=1,padx=20,pady=30)
+        self.acIn=tk.Entry(self.depositFrame,fg="white",width=15,font=("Times Roman",15))
+        self.acIn.grid(row=2,column=2,padx=20,pady=30)
+       
+        
+        #adding to show money being deposited
+        depoLabel=tk.Label(self.depositFrame,text="Amount :",bg="light gray",fg="black",font=("Times Roman",15,"bold"))
+        depoLabel.grid(row=3,column=1,padx=20,pady=30)
+        self.depoIn=tk.Entry(self.depositFrame,fg="white",width=15,font=("Times Roman",15))
+        self.depoIn.grid(row=3,column=2,padx=20,pady=30)
+
+         #adding to show confirm money being deposited
+        condepoLabel=tk.Label(self.depositFrame,text="Confirm Amount :",bg="light gray",fg="black",font=("Times Roman",15,"bold"))
+        condepoLabel.grid(row=4,column=1,padx=20,pady=30)
+        self.condepoIn=tk.Entry(self.depositFrame,fg="white",width=15,font=("Times Roman",15))
+        self.condepoIn.grid(row=4,column=2,padx=20,pady=30)
+
+        submitBtn=ttk.Button(self.depositFrame,text="Submit",command=self.finalsubmit,style="Blue.TButton")
+        submitBtn.grid(row=5,column=2,padx=20,pady=10)
+
+    def finalsubmit(self):
+        
+        success=self.savedatabase()
+        if success:
+            self.create_main_frame()
     
+    #=====================================
+    #     COMPLETE DEPOSIT DATABASE LOGIC
+    #=====================================
+    def savedatabase(self):
+        username = self.usenameIn.get()
+        account_number = self.acIn.get()
+        deposit_amt = self.depoIn.get()
+        confirm_amt = self.condepoIn.get()
+
+        # EMPTY CHECK
+        if username == "" or account_number == "" or deposit_amt == "" or confirm_amt == "":
+            messagebox.showerror("Error", "⚠ Please fill all fields.")
+            return False
+
+        # AMOUNT MATCH
+        if deposit_amt != confirm_amt:
+            messagebox.showerror("Error", "❌ Amounts do not match.")
+            return False
+
+        # VALID FLOAT CHECK
+        try:
+            deposit_amt = float(deposit_amt)
+        except:
+            messagebox.showerror("Error", "❌ Enter a valid numeric amount.")
+            return False
+
+        if deposit_amt < 1:
+            messagebox.showerror("Error", "❌ Minimum deposit is ₹1.")
+            return False
+
+        # VERIFY ACCOUNT EXISTS
+        self.cursor.execute(
+            "SELECT balance FROM accounts WHERE account_number = %s and LOWER(name)=LOWER(%s)",
+            (account_number,username)
+        )
+        result = self.cursor.fetchone()
+
+        if not result:
+            messagebox.showerror("Error", "❌ Invalid Account Number.")
+            return False
+
+        current_balance = result[0]
+
+        # UPDATE BALANCE
+        new_balance = current_balance + deposit_amt
+
+        self.cursor.execute(
+            "UPDATE accounts SET balance = %s WHERE account_number = %s",
+            (new_balance, account_number)
+        )
+        self.db.commit()
+
+        messagebox.showinfo("Success",
+                            f"₹{deposit_amt} Deposited Successfully!\n"
+                            f"New Balance: ₹{new_balance}")
+
+        return True
+
+
+            
+            
+
+        
 
 
 
