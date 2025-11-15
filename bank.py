@@ -94,7 +94,7 @@ class bank():
         wtLabel.place(x=160,y=260)
 
         #add withdraw button
-        wtBtn=ttk.Button(self.mainFrame,text="Withdraw",style="Blue.TButton")
+        wtBtn=ttk.Button(self.mainFrame,text="Withdraw",command=self.withdraw,style="Blue.TButton")
         wtBtn.place(x=80,y=300,width=280,height=60)
         #defining function of openAc button
     def openAc(self):
@@ -409,7 +409,7 @@ class bank():
         )
         self.cursor.execute(
         "INSERT INTO deposit_history (account_no, amount, date_time, description) VALUES (%s, %s, NOW(), %s)",
-        (account_number, deposit_amt, self.payment_type.get()))
+        (account_number, deposit_amt, p_type))
         self.db.commit()
 
         messagebox.showinfo("Success",
@@ -419,10 +419,132 @@ class bank():
         return True
 
 
-            
-            
+    def withdraw(self):
+        if self.mainFrame:
+            self.mainFrame.destroy()
 
-        
+        #================================================
+        # WITHDRAW FRAME (FUNCTION OF WITHDRAW BUTTON) ||
+        #================================================
+        self.withdrawFrame = tk.Frame(self.root, bg="light gray", bd=5, relief="ridge")
+        self.withdrawFrame.place(x=500, y=90, width=450, height=550)
+
+        # Title label
+        wtLabel = tk.Label(self.withdrawFrame, text="Withdraw Amount", font=("Times Roman", 20, "bold"))
+        wtLabel.place(x=140, y=10)
+
+        self.withdrawFrame.grid_columnconfigure(0, minsize=60)
+        self.withdrawFrame.grid_rowconfigure(0, minsize=40)
+
+        # Username
+        usLabel = tk.Label(self.withdrawFrame, text="User Name :", bg="light gray", fg="black", font=("Times Roman", 15, "bold"))
+        usLabel.grid(row=1, column=1, padx=20, pady=30)
+        self.w_usIn = tk.Entry(self.withdrawFrame, width=15, font=("Times Roman", 15))
+        self.w_usIn.grid(row=1, column=2, padx=20, pady=30)
+
+        # Account Number
+        acLabel = tk.Label(self.withdrawFrame, text="Account Number :", bg="light gray", fg="black", font=("Times Roman", 15, "bold"))
+        acLabel.grid(row=2, column=1, padx=20, pady=30)
+        self.w_acIn = tk.Entry(self.withdrawFrame, width=15, font=("Times Roman", 15))
+        self.w_acIn.grid(row=2, column=2, padx=20, pady=30)
+
+        # Amount
+        amtLabel = tk.Label(self.withdrawFrame, text="Amount :", bg="light gray", fg="black", font=("Times Roman", 15, "bold"))
+        amtLabel.grid(row=3, column=1, padx=20, pady=30)
+        self.w_amtIn = tk.Entry(self.withdrawFrame, width=15, font=("Times Roman", 15))
+        self.w_amtIn.grid(row=3, column=2, padx=20, pady=30)
+
+        # Confirm Amount
+        camtLabel = tk.Label(self.withdrawFrame, text="Confirm Amount :", bg="light gray", fg="black", font=("Times Roman", 15, "bold"))
+        camtLabel.grid(row=4, column=1, padx=20, pady=30)
+        self.w_camtIn = tk.Entry(self.withdrawFrame, width=15, font=("Times Roman", 15))
+        self.w_camtIn.grid(row=4, column=2, padx=20, pady=30)
+
+        # Submit button
+        submitBtn = ttk.Button(self.withdrawFrame,command=self.finalwithdraw, text="Submit", style="Blue.TButton")
+        submitBtn.grid(row=6, column=2, padx=20, pady=10)
+
+        # Back button
+        backBtn = ttk.Button(self.withdrawFrame, text="Back", command=self.create_main_frame, style="Blue.TButton")
+        backBtn.grid(row=6, column=1, padx=20, pady=10)
+
+    def finalwithdraw(self):
+        success = self.savedatabase_withdraw()
+        if success:
+            self.create_main_frame()
+
+
+    def savedatabase_withdraw(self):
+        username = self.w_usIn.get()
+        account_number = self.w_acIn.get()
+        amount = self.w_amtIn.get()
+        confirm_amount = self.w_camtIn.get()
+
+        # Empty fields check
+        if username == "" or account_number == "" or amount == "" or confirm_amount == "":
+            messagebox.showerror("Error", "⚠ Please fill all fields.")
+            return False
+
+        # Amount match
+        if amount != confirm_amount:
+            messagebox.showerror("Error", "❌ Amounts do not match.")
+            return False
+
+        # Valid numeric amount
+        try:
+            amount = float(amount)
+        except:
+            messagebox.showerror("Error", "❌ Enter a valid numeric amount.")
+            return False
+
+        if amount <= 0:
+            messagebox.showerror("Error", "❌ Amount must be greater than 0.")
+            return False
+
+        # Verify account exists
+        self.cursor.execute(
+            "SELECT balance FROM accounts WHERE account_number = %s AND LOWER(name)=LOWER(%s)",
+            (account_number, username)
+        )
+        result = self.cursor.fetchone()
+
+        if not result:
+            messagebox.showerror("Error", "❌ Invalid Account Number or User Name.")
+            return False
+
+        current_balance = result[0]
+
+        # Check for sufficient balance
+        if amount > current_balance:
+            messagebox.showerror("Error", "❌ Insufficient Balance.")
+            return False
+
+        new_balance = current_balance - amount
+
+        # Update balance
+        self.cursor.execute(
+            "UPDATE accounts SET balance = %s WHERE account_number = %s",
+            (new_balance, account_number)
+        )
+
+        # Insert into withdrawal history table
+        self.cursor.execute(
+            "INSERT INTO withdraw_history (account_no, amount, date_time) VALUES (%s, %s, NOW())",
+            (account_number, amount)
+        )
+
+        self.db.commit()
+
+        messagebox.showinfo("Success",
+                            f"₹{amount} Withdrawn Successfully!\n"
+                            f"Remaining Balance: ₹{new_balance}")
+
+        return True
+
+                    
+                    
+
+                
 
 
 
